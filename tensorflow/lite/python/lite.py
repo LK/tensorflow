@@ -885,8 +885,8 @@ class TFLiteConverter(TFLiteConverterBase):
       for tensor in self._input_tensors:
         shape = tensor.shape
         if not shape:
-          raise ValueError("Provide an input shape for input array "
-                           "'{0}'.".format(_get_tensor_name(tensor)))
+          continue
+          
         # Note that shape_list might be empty for scalar shapes.
         shape_list = shape.as_list()
         if None in shape_list[1:]:
@@ -895,7 +895,7 @@ class TFLiteConverter(TFLiteConverterBase):
               "invalid shape '{1}'.".format(
                   _get_tensor_name(tensor), shape_list))
         elif shape_list and shape_list[0] is None:
-          self._set_batch_size(batch_size=1)
+          self._set_batch_size(tensor, batch_size=1)
 
     # Get quantization stats. Ensures there is one stat per name if the stats
     # are specified.
@@ -1013,10 +1013,11 @@ class TFLiteConverter(TFLiteConverterBase):
     """
     return self._input_tensors and self._output_tensors
 
-  def _set_batch_size(self, batch_size):
+  def _set_batch_size(self, tensor, batch_size):
     """Sets the first dimension of the input tensor to `batch_size`.
 
     Args:
+      tensor: The tensor to set the batch size for.
       batch_size: Batch size for the model. Replaces the first dimension of an
         input size array if undefined. (default 1)
 
@@ -1027,11 +1028,9 @@ class TFLiteConverter(TFLiteConverterBase):
       raise ValueError("The batch size cannot be set for this model. Please "
                        "use input_shapes parameter.")
 
-    for tensor in self._input_tensors:
-      shape = tensor.shape.as_list()
-      shape[0] = batch_size
-      tensor.set_shape(shape)
-
+    shape = tensor.shape.as_list()
+    shape[0] = batch_size
+    tensor.set_shape(shape)
 
 @_tf_export(v1=["lite.TocoConverter"])
 class TocoConverter(object):
